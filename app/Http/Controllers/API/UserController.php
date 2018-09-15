@@ -162,9 +162,13 @@ public $successStatus = 200;
         $result =  $this->sendVerifyOtp($url);
         $varify = json_decode($result);
 
+        $auth = User::where('mobile', $request->mobile)->first();
+        if(empty($auth)){
+            return response(['statusCode' => 0, 'error' => ['Mobile number not Found'], 'message' => ['Mobile number not Found']]);
+        }
         if($varify->type == "success"){
 
-            $auth = User::where('mobile', $request->mobile)->first();
+
             $user =  Auth::loginUsingId($auth['id'], true);
 
             $success['token'] = $user->createToken('RaktsevaDal')->accessToken;

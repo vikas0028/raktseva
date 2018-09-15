@@ -24,15 +24,19 @@ public $successStatus = 200;
             return response(["statusCode" => "0", "message" => "404 Not found.", "errors" => []], 404)->header('Content-Type', "json");
         }
 
+        $messages = [
+            'mobile.min' => 'Mobile number should be atleast 12 digits with country code.',
+            'mobile.max' => 'Mobile number should not be more than 12 digits with country code.',
+        ];
+
         if(isset($request['mobile'])){
 
             $validator = Validator::make($request->all(), [
-                'mobile' => 'required',
-                //'otp' => 'required',
+                'mobile' => 'required|unique:users|min:12|max:12',
                 'device_token' => 'required',
                 'device_type' => 'required',
                 'device_details' => 'required',
-            ]);
+            ],$messages);
 
         }else{
 
@@ -56,20 +60,29 @@ public $successStatus = 200;
             $checkNumber = User::where('mobile', $request->mobile)->first();
 
             if(empty($checkNumber)){
-                return response(['statusCode' => 0, 'errors' => "Number is not registered", 'message' => ['Failed']]);
+
+                    $userCreate = new User;
+                    $userCreate->mobile = $request->mobile;
+                    $userCreate->device_token = $request->device_token;
+                    $userCreate->device_type = $request->device_type;
+                    $userCreate->device_details = $request->device_details;
+                    $userCreate->save();
+
+                //return response(['statusCode' => 0, 'errors' => "Number is not registered", 'message' => ['Failed']]);
             }
 
             $otp = rand(100000,999999);
-            $otp_length= '6';
+            $otp_length= '4';
             $message = 'Your OTP is '. $otp;
             $sender = 'RAKTSEVADAL';
             $otp_expiry='3';
             $template ='mkmkkk';
-            $mobile = '91'.$request->mobile;
+            $mobile = $request->mobile;
             $email ="";
 
             $url = "http://control.msg91.com/api/sendotp.php?template=".$template."&otp_length=".$otp_length."&authkey=".env("TRANSAUTHKEY", "235391AG8E7NoOgG5b8d4843")."&message=".$message."&sender=".$sender."&mobile=".$mobile."&otp=".$otp."&otp_expiry=".$otp_expiry."&email=".$email;
             $sendOtp = $this->sendVerifyOtp($url);
+
             $arr = json_decode($sendOtp);
             if(isset($arr->type) && $arr->type =="success"){
                 //$checkNumber = User::where('mobile',$request->mobile)->update(['otp'=>$otp,'updated_at'=> date('Y-m-d H:i:s')]);
@@ -80,7 +93,7 @@ public $successStatus = 200;
                 return response(['statusCode' => 0, 'success' => "Fail to send Otp", 'message' => ['Failed']]);
             }
 
-        }else {
+        } else {
 
             if (Auth::attempt(['email' => request('email'), 'password' => request('password')])) {
                 $user = Auth::user();
@@ -150,7 +163,10 @@ public $successStatus = 200;
         $varify = json_decode($result);
 
         if($varify->type == "success"){
-            $user = User::where('mobile', $request->mobile)->first();
+
+            $auth = User::where('mobile', $request->mobile)->first();
+            $user =  Auth::loginUsingId($auth['id'], true);
+
             $success['token'] = $user->createToken('RaktsevaDal')->accessToken;
             $success['data'] =  $user;
             return response(['statusCode' => 1, 'data'=>$success, 'success' => ['Verify SuccessFully'], 'message' => [$varify->message]]);

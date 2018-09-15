@@ -32,7 +32,7 @@ public $successStatus = 200;
         if(isset($request['mobile'])){
 
             $validator = Validator::make($request->all(), [
-                'mobile' => 'required|unique:users|min:12|max:12',
+                'mobile' => 'required|min:12|max:12',
                 'device_token' => 'required',
                 'device_type' => 'required',
                 'device_details' => 'required',

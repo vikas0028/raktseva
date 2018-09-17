@@ -16,12 +16,15 @@ use Illuminate\Http\Request;
 Route::post('login', 'API\UserController@login');
 Route::post('register', 'API\UserController@register');
 Route::post('verify_otp', ['uses' => 'API\UserController@otpVerify']);
+Route::post('resend_otp', ['uses' => 'API\UserController@otpResend']);
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
 Route::group(['middleware' => 'auth:api'], function(){
+
 	 Route::post('details', 'API\UserController@details');
-	
+	 Route::post('update_profile', 'API\UserController@updateProfile');
+
  });

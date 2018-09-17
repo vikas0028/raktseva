@@ -72,7 +72,7 @@ public $successStatus = 200;
             }
 
             $otp = rand(100000,999999);
-            $otp_length= '4';
+            $otp_length= '6';
             $message = 'Your OTP is '. $otp;
             $sender = 'RAKTSEVADAL';
             $otp_expiry='3';
@@ -104,35 +104,6 @@ public $successStatus = 200;
                 return response()->json(['error' => 'Unauthorised'], 401);
             }
 
-        }
-    }
-
-    public function sendVerifyOtp($url){
-        //dd(env("TRANSAUTHKEY", "235391AG8E7NoOgG5b8d4843"));
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => "",
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_SSL_VERIFYPEER => 0,
-        ));
-
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
-
-        curl_close($curl);
-
-        if ($err) {
-            return $err;
-        } else {
-            return $response;
         }
     }
 
@@ -180,6 +151,50 @@ public $successStatus = 200;
 
     }
 
+    public function otpResend(Request $request)
+    {
+
+        if (!$request->isMethod('post')) {
+            return response(["statusCode" => "0", "message" => "404 Not found.", "errors" => []], 404)->header('Content-Type', "json");
+        }
+
+        $messages = [
+            'mobile.min' => 'Mobile number should be atleast 12 digits with country code.',
+            'mobile.max' => 'Mobile number should not be more than 12 digits with country code.',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'mobile' => 'required|min:12|max:12',
+            'retrytype' =>'required'
+        ],$messages);
+
+        if ($validator->fails()) {
+            return response(['statusCode' => 0, 'errors' => $validator->errors()->all(), 'message' => ['Failed']]);
+        }
+
+        $url = "http://control.msg91.com/api/retryotp.php?authkey=".env("TRANSAUTHKEY", "235391AG8E7NoOgG5b8d4843")."&mobile=".$request->mobile."&retrytype=".$request->retrytype;
+        $result =  $this->sendVerifyOtp($url);
+        $varify = json_decode($result);
+
+        if($varify->type == "success"){
+            return response(['statusCode' => 1, 'success' => ['Otp Resend successfully'], 'message' => [$varify->message]]);
+        }else{
+            return response(['statusCode' => 0, 'error' => [$varify->message], 'message' => [$varify->message]]);
+        }
+    }
+
+    /**
+     * Update Profile
+     * @params Login id ,Image, name , age , Dob , Gender ,Blood Group ,Location( lat,Long )
+     * @return \Illuminate\Http\Response
+     */
+
+    public function updateProfile(Request $request) {
+
+
+
+    }
+
 	/** 
      * Register api 
      * 
@@ -216,5 +231,35 @@ public $successStatus = 200;
     { 
         $user = Auth::user(); 
         return response()->json(['success' => $user], $this->successStatus); 
-    } 
+    }
+
+    public function sendVerifyOtp($url){
+        //dd(env("TRANSAUTHKEY", "235391AG8E7NoOgG5b8d4843"));
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => "",
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => 0,
+        ));
+
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+
+        curl_close($curl);
+
+        if ($err) {
+            return $err;
+        } else {
+            return $response;
+        }
+    }
+
 }

@@ -5,19 +5,26 @@ namespace App\Http\Controllers\API;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\User;
+use App\RequestBloodDonate;
 use Illuminate\Support\Facades\Auth;
 use Validator;
+use DB;
 
 class UserController extends Controller
 {
 
     public $successStatus = 200;
-
+    public $user;
     /**
      * login api
      *
      * @return \Illuminate\Http\Response
      */
+
+    public function __construct(User $user)
+    {
+        $this->user = $user;
+    }
 
     public function login(Request $request)
     {
@@ -361,4 +368,38 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * Send Blood Request
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function sendBloodRequest(request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'patient_name' => 'required',
+            'blood_group' => 'required',
+            'donated_hospital' => 'required',
+            'quantity_donated' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 401);
+        }
+
+        $donateRequest = new RequestBloodDonate();
+        $donateRequest->user_id = $request->user()->id;
+        $donateRequest->patient_name = $request->patient_name;
+        $donateRequest->blood_group = $request->blood_group;
+        $donateRequest->donated_hospital = $request->donated_hospital;
+        $donateRequest->quantity_donated = $request->quantity_donated;
+        $donateRequest->address = $request->address;
+        $donateRequest->lat = $request->lat;
+        $donateRequest->long = $request->long;
+        $donateRequest->save();
+
+        $donnor = DB::select("SELECT *,( 6371 * acos( cos( radians($request->lat) ) * cos( radians( `lat` ) ) * cos( radians( `long` ) - radians($request->long) ) + sin( radians($request->lat) ) * sin( radians( `lat` ) ) ) ) AS distance FROM `users` HAVING distance <=30 ORDER BY distance ASC");
+
+        return response()->json(['success' => 'Blood Donation Request is send Successfully','request_id'=> $donateRequest->id,'feasible_user'=>$donnor], $this->successStatus);
+    }
 }

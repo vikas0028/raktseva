@@ -9,6 +9,7 @@ use App\RequestBloodDonate;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 use DB;
+use Input;
 
 class UserController extends Controller
 {
@@ -401,5 +402,34 @@ class UserController extends Controller
         $donnor = DB::select("SELECT *,( 6371 * acos( cos( radians($request->lat) ) * cos( radians( `lat` ) ) * cos( radians( `long` ) - radians($request->long) ) + sin( radians($request->lat) ) * sin( radians( `lat` ) ) ) ) AS distance FROM `users` HAVING distance <=30 ORDER BY distance ASC");
 
         return response()->json(['success' => 'Blood Donation Request is send Successfully','request_id'=> $donateRequest->id,'feasible_user'=>$donnor], $this->successStatus);
+    }
+
+    /**
+     * Get Users of Requested Blood Data Result
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getRequestedBloodUser(request $request, RequestBloodDonate $RequestBloodDonate)
+    {
+        // Continue for all of the filters.
+        // No filters have been provided, so
+        // let's return all users.\
+        $bloodRequestUsers = RequestBloodDonate::orderBy('id','desc')->Paginate(10);
+
+        // Search for a user based on their blood group.
+        if ($request->has('blood_group')) {
+            $bloodRequestUsers = $RequestBloodDonate->where('blood_group', '=', $request->input('blood_group'))->orderBy('id','desc')->Paginate(10);
+        }
+
+        // Search for a user based on their latitude.
+        if ($request->has('lat')) {
+            $bloodRequestUsers = $RequestBloodDonate->where('lat', $request->input('lat'))->orderBy('id','desc')->Paginate(10);
+        }
+
+        // Search for a user based on their longitude.
+        if ($request->get('long')) {
+            $bloodRequestUsers = $RequestBloodDonate->where('long', $request->input('long'))->orderBy('id','desc')->Paginate(10);
+        }
+        return response()->json(['data' => $bloodRequestUsers], $this->successStatus);
     }
 }

@@ -27,5 +27,6 @@ Route::group(['middleware' => 'auth:api'], function(){
 	 Route::post('details', 'API\UserController@details');
 	 Route::post('update_profile', 'API\UserController@updateProfile');
     Route::post('send_blood_request', 'API\UserController@sendBloodRequest');
+    Route::post('get_blood_requested_user', 'API\UserController@getRequestedBloodUser');
 
  });

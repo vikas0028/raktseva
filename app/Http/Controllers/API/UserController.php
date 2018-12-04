@@ -417,7 +417,7 @@ class UserController extends Controller
         $bloodRequestUsers = RequestBloodDonate::orderBy('id','desc')->Paginate(10);
 
         // Search for a user based on their blood group.
-        if ($request->has('blood_group')) {
+         if ($request->has('blood_group')) {
             $bloodRequestUsers = $RequestBloodDonate->where('blood_group', '=', $request->input('blood_group'))->orderBy('id','desc')->Paginate(10);
         }
 
